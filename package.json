@@ -44,6 +44,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.2",
     "socket.io": "^4.8.1",
+    "speakeasy": "^2.0.0",
     "winston": "^3.14.2"
   },
   "devDependencies": {

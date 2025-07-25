@@ -179,7 +179,6 @@ const orderSchema = new mongoose.Schema(
     // Additional execution data
     executedAt: Date,
     cancelledAt: Date,
-    averagePrice: Number,
 
     metadata: {
       strategy: String,
@@ -243,7 +242,9 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-// Remove virtual averagePrice since we added it as a real field
+orderSchema.virtual('averagePrice').get(function () {
+  return this.filled > 0 ? this.cost / this.filled : 0;
+});
 
 orderSchema.virtual('fillPercentage').get(function () {
   return this.amount > 0 ? (this.filled / this.amount) * 100 : 0;

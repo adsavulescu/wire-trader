@@ -375,6 +375,304 @@ class AuthService {
   }
 
   /**
+   * Send email verification token
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} Result
+   */
+  async sendEmailVerification(userId) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.isEmailVerified) {
+        throw new Error('Email is already verified');
+      }
+
+      // Generate verification token
+      const crypto = require('crypto');
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+      user.emailVerificationToken = verificationToken;
+      user.emailVerificationTokenExpires = tokenExpires;
+      await user.save();
+
+      logger.info('Email verification token generated', {
+        userId: user._id,
+        email: user.email
+      });
+
+      // In a real implementation, send email here
+      // For now, return the token for testing
+      return {
+        success: true,
+        message: 'Email verification token sent',
+        verificationToken // Remove this in production
+      };
+    } catch (error) {
+      logger.error('Failed to send email verification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify email with token
+   * @param {string} token - Verification token
+   * @returns {Promise<Object>} Result
+   */
+  async verifyEmail(token) {
+    try {
+      const user = await User.findOne({
+        emailVerificationToken: token,
+        emailVerificationTokenExpires: { $gt: new Date() }
+      });
+
+      if (!user) {
+        throw new Error('Invalid or expired verification token');
+      }
+
+      user.isEmailVerified = true;
+      user.emailVerificationToken = undefined;
+      user.emailVerificationTokenExpires = undefined;
+      await user.save();
+
+      logger.info('Email verified successfully', {
+        userId: user._id,
+        email: user.email
+      });
+
+      return {
+        success: true,
+        message: 'Email verified successfully'
+      };
+    } catch (error) {
+      logger.error('Email verification failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Send password reset token
+   * @param {string} email - User email
+   * @returns {Promise<Object>} Result
+   */
+  async sendPasswordReset(email) {
+    try {
+      const user = await User.findByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists for security
+        return {
+          success: true,
+          message: 'If the email exists, a password reset link has been sent'
+        };
+      }
+
+      // Generate reset token
+      const crypto = require('crypto');
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const tokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      user.passwordResetToken = resetToken;
+      user.passwordResetTokenExpires = tokenExpires;
+      await user.save();
+
+      logger.info('Password reset token generated', {
+        userId: user._id,
+        email: user.email
+      });
+
+      // In a real implementation, send email here
+      // For now, return the token for testing
+      return {
+        success: true,
+        message: 'If the email exists, a password reset link has been sent',
+        resetToken // Remove this in production
+      };
+    } catch (error) {
+      logger.error('Failed to send password reset:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Reset password with token
+   * @param {string} token - Reset token
+   * @param {string} newPassword - New password
+   * @returns {Promise<Object>} Result
+   */
+  async resetPassword(token, newPassword) {
+    try {
+      const user = await User.findOne({
+        passwordResetToken: token,
+        passwordResetTokenExpires: { $gt: new Date() }
+      });
+
+      if (!user) {
+        throw new Error('Invalid or expired reset token');
+      }
+
+      user.password = newPassword; // Will be hashed by pre-save middleware
+      user.passwordResetToken = undefined;
+      user.passwordResetTokenExpires = undefined;
+      await user.save();
+
+      logger.info('Password reset successfully', {
+        userId: user._id,
+        email: user.email
+      });
+
+      return {
+        success: true,
+        message: 'Password reset successfully'
+      };
+    } catch (error) {
+      logger.error('Password reset failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Setup two-factor authentication
+   * @param {string} userId - User ID
+   * @returns {Promise<Object>} Setup data
+   */
+  async setupTwoFactor(userId) {
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (user.twoFactorAuth.enabled) {
+        throw new Error('Two-factor authentication is already enabled');
+      }
+
+      // Generate TOTP secret
+      const speakeasy = require('speakeasy');
+      const secret = speakeasy.generateSecret({
+        name: `Wire-Trader (${user.email})`,
+        issuer: 'Wire-Trader'
+      });
+
+      // Store secret temporarily (will be confirmed when user verifies)
+      user.twoFactorAuth.secret = secret.base32;
+      await user.save();
+
+      logger.info('Two-factor authentication setup initiated', {
+        userId: user._id,
+        email: user.email
+      });
+
+      return {
+        success: true,
+        secret: secret.base32,
+        qrCode: secret.otpauth_url,
+        manualEntryKey: secret.base32
+      };
+    } catch (error) {
+      logger.error('2FA setup failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify and enable two-factor authentication
+   * @param {string} userId - User ID
+   * @param {string} token - TOTP token
+   * @returns {Promise<Object>} Result
+   */
+  async verifyTwoFactor(userId, token) {
+    try {
+      const user = await User.findById(userId).select('+twoFactorAuth.secret');
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (!user.twoFactorAuth.secret) {
+        throw new Error('Two-factor authentication not set up');
+      }
+
+      const speakeasy = require('speakeasy');
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorAuth.secret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+
+      if (!verified) {
+        throw new Error('Invalid verification code');
+      }
+
+      user.twoFactorAuth.enabled = true;
+      await user.save();
+
+      logger.info('Two-factor authentication enabled', {
+        userId: user._id,
+        email: user.email
+      });
+
+      return {
+        success: true,
+        message: 'Two-factor authentication enabled successfully'
+      };
+    } catch (error) {
+      logger.error('2FA verification failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Disable two-factor authentication
+   * @param {string} userId - User ID
+   * @param {string} token - TOTP token
+   * @returns {Promise<Object>} Result
+   */
+  async disableTwoFactor(userId, token) {
+    try {
+      const user = await User.findById(userId).select('+twoFactorAuth.secret');
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (!user.twoFactorAuth.enabled) {
+        throw new Error('Two-factor authentication is not enabled');
+      }
+
+      const speakeasy = require('speakeasy');
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorAuth.secret,
+        encoding: 'base32',
+        token: token,
+        window: 2
+      });
+
+      if (!verified) {
+        throw new Error('Invalid verification code');
+      }
+
+      user.twoFactorAuth.enabled = false;
+      user.twoFactorAuth.secret = undefined;
+      await user.save();
+
+      logger.info('Two-factor authentication disabled', {
+        userId: user._id,
+        email: user.email
+      });
+
+      return {
+        success: true,
+        message: 'Two-factor authentication disabled successfully'
+      };
+    } catch (error) {
+      logger.error('2FA disable failed:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Validate user permissions
    * @param {string} userId - User ID
    * @param {string} permission - Permission to check

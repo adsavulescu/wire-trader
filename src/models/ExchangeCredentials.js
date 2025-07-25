@@ -19,7 +19,7 @@ const exchangeCredentialsSchema = new mongoose.Schema(
     exchangeName: {
       type: String,
       required: [true, 'Exchange name is required'],
-      enum: ['binance', 'coinbase', 'kraken'],
+      enum: ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin'],
       lowercase: true
     },
 
@@ -41,9 +41,9 @@ const exchangeCredentialsSchema = new mongoose.Schema(
 
     encryptedPassphrase: {
       type: String,
-      // Only required for exchanges that need it (like Coinbase)
+      // Only required for exchanges that need it (Coinbase and KuCoin)
       required: function () {
-        return this.exchangeName === 'coinbase';
+        return ['coinbase', 'kucoin'].includes(this.exchangeName);
       }
     },
 
@@ -310,7 +310,9 @@ exchangeCredentialsSchema.statics.createWithEncryption = async function (data) {
   const displayNames = {
     binance: 'Binance',
     coinbase: 'Coinbase Pro',
-    kraken: 'Kraken'
+    kraken: 'Kraken',
+    ftx: 'FTX',
+    kucoin: 'KuCoin'
   };
 
   const credentials = new this({
