@@ -90,7 +90,7 @@ router.post('/register', rateLimitByUser(5, 15 * 60 * 1000), async (req, res) =>
     });
   } catch (error) {
     logger.error('Registration error:', error);
-    
+
     if (error.message.includes('already exists')) {
       return res.status(409).json({
         success: false,
@@ -136,9 +136,11 @@ router.post('/login', rateLimitByUser(10, 15 * 60 * 1000), async (req, res) => {
     });
   } catch (error) {
     logger.error('Login error:', error);
-    
-    if (error.message.includes('Invalid email or password') || 
-        error.message.includes('Account is inactive')) {
+
+    if (
+      error.message.includes('Invalid email or password') ||
+      error.message.includes('Account is inactive')
+    ) {
       return res.status(401).json({
         success: false,
         message: error.message
@@ -215,43 +217,48 @@ router.put('/profile', authenticateToken, async (req, res) => {
  * @desc Change user password
  * @access Private
  */
-router.post('/change-password', authenticateToken, rateLimitByUser(3, 15 * 60 * 1000), async (req, res) => {
-  try {
-    // Validate input
-    const { error, value } = changePasswordSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({
+router.post(
+  '/change-password',
+  authenticateToken,
+  rateLimitByUser(3, 15 * 60 * 1000),
+  async (req, res) => {
+    try {
+      // Validate input
+      const { error, value } = changePasswordSchema.validate(req.body);
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: 'Validation error',
+          errors: error.details.map(detail => detail.message)
+        });
+      }
+
+      const { currentPassword, newPassword } = value;
+
+      // Change password
+      const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
+
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      logger.error('Change password error:', error);
+
+      if (error.message.includes('Current password is incorrect')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
+
+      res.status(500).json({
         success: false,
-        message: 'Validation error',
-        errors: error.details.map(detail => detail.message)
+        message: 'Failed to change password'
       });
     }
-
-    const { currentPassword, newPassword } = value;
-
-    // Change password
-    const result = await authService.changePassword(req.user.id, currentPassword, newPassword);
-
-    res.json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    logger.error('Change password error:', error);
-    
-    if (error.message.includes('Current password is incorrect')) {
-      return res.status(400).json({
-        success: false,
-        message: error.message
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Failed to change password'
-    });
   }
-});
+);
 
 /**
  * @route POST /api/auth/refresh
@@ -278,9 +285,11 @@ router.post('/refresh', async (req, res) => {
     });
   } catch (error) {
     logger.error('Token refresh error:', error);
-    
-    if (error.message.includes('Invalid refresh token') || 
-        error.message.includes('User not found')) {
+
+    if (
+      error.message.includes('Invalid refresh token') ||
+      error.message.includes('User not found')
+    ) {
       return res.status(401).json({
         success: false,
         message: 'Invalid refresh token'
@@ -327,10 +336,10 @@ router.post('/logout', authenticateToken, (req, res) => {
   try {
     // Log the logout event
     logger.logAuthEvent(
-      req.user.id, 
-      'logout', 
-      true, 
-      req.ip || req.connection.remoteAddress, 
+      req.user.id,
+      'logout',
+      true,
+      req.ip || req.connection.remoteAddress,
       req.get('User-Agent')
     );
 
@@ -352,21 +361,26 @@ router.post('/logout', authenticateToken, (req, res) => {
  * @desc Deactivate user account
  * @access Private
  */
-router.delete('/account', authenticateToken, rateLimitByUser(1, 60 * 60 * 1000), async (req, res) => {
-  try {
-    const result = await authService.deactivateAccount(req.user.id);
+router.delete(
+  '/account',
+  authenticateToken,
+  rateLimitByUser(1, 60 * 60 * 1000),
+  async (req, res) => {
+    try {
+      const result = await authService.deactivateAccount(req.user.id);
 
-    res.json({
-      success: true,
-      message: result.message
-    });
-  } catch (error) {
-    logger.error('Account deactivation error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to deactivate account'
-    });
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      logger.error('Account deactivation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to deactivate account'
+      });
+    }
   }
-});
+);
 
 module.exports = router;

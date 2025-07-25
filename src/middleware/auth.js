@@ -19,17 +19,17 @@ const authenticateToken = async (req, res, next) => {
 
     // Verify the token
     const decoded = authService.verifyToken(token);
-    
+
     // Get user profile
     const userProfile = await authService.getUserProfile(decoded.userId);
-    
+
     // Add user info to request object
     req.user = userProfile;
-    
+
     next();
   } catch (error) {
     logger.error('Authentication failed:', error);
-    
+
     if (error.message === 'Token has expired') {
       return res.status(401).json({
         success: false,
@@ -65,7 +65,7 @@ const optionalAuth = async (req, res, next) => {
       const userProfile = await authService.getUserProfile(decoded.userId);
       req.user = userProfile;
     }
-    
+
     next();
   } catch (error) {
     // Don't fail for optional auth, just continue without user
@@ -78,7 +78,7 @@ const optionalAuth = async (req, res, next) => {
  * Permission Check Middleware
  * Requires authentication and checks user permissions
  */
-const requirePermission = (permission) => {
+const requirePermission = permission => {
   return async (req, res, next) => {
     try {
       if (!req.user) {
@@ -89,7 +89,7 @@ const requirePermission = (permission) => {
       }
 
       const hasPermission = await authService.hasPermission(req.user.id, permission);
-      
+
       if (!hasPermission) {
         return res.status(403).json({
           success: false,
@@ -118,7 +118,7 @@ const rateLimitByUser = (maxRequests = 100, windowMs = 15 * 60 * 1000) => {
   return (req, res, next) => {
     const userId = req.user ? req.user.id : req.ip;
     const now = Date.now();
-    
+
     // Clean up old entries
     const cutoffTime = now - windowMs;
     for (const [key, data] of userRequests.entries()) {
@@ -168,7 +168,7 @@ const adminOnly = (req, res, next) => {
   // Add admin check logic here when user roles are implemented
   // For now, check if user is a specific admin email or has admin flag
   const adminEmails = ['admin@wire-trader.com']; // Configure as needed
-  
+
   if (!adminEmails.includes(req.user.email)) {
     return res.status(403).json({
       success: false,
@@ -185,8 +185,8 @@ const adminOnly = (req, res, next) => {
  */
 const auditLog = (req, res, next) => {
   const originalSend = res.send;
-  
-  res.send = function(data) {
+
+  res.send = function (data) {
     // Log the request after response is sent
     logger.info('API Request', {
       userId: req.user ? req.user.id : null,
@@ -197,7 +197,7 @@ const auditLog = (req, res, next) => {
       statusCode: res.statusCode,
       responseTime: Date.now() - req.startTime
     });
-    
+
     originalSend.call(this, data);
   };
 

@@ -19,17 +19,17 @@ const logFormat = winston.format.combine(
   winston.format.errors({ stack: true }),
   winston.format.printf(({ timestamp, level, message, stack, ...meta }) => {
     let log = `${timestamp} [${level.toUpperCase()}]: ${message}`;
-    
+
     // Add metadata if present
     if (Object.keys(meta).length > 0) {
       log += ` ${JSON.stringify(meta)}`;
     }
-    
+
     // Add stack trace for errors
     if (stack) {
       log += `\n${stack}`;
     }
-    
+
     return log;
   })
 );
@@ -44,11 +44,11 @@ const consoleFormat = winston.format.combine(
   }),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
     let log = `${timestamp} ${level}: ${message}`;
-    
+
     if (Object.keys(meta).length > 0) {
       log += ` ${JSON.stringify(meta, null, 2)}`;
     }
-    
+
     return log;
   })
 );
@@ -68,7 +68,7 @@ const logger = winston.createLogger({
       maxFiles: 5,
       tailable: true
     }),
-    
+
     // Error-specific file transport
     new winston.transports.File({
       filename: path.join(logsDir, 'error.log'),
@@ -78,7 +78,7 @@ const logger = winston.createLogger({
       tailable: true
     })
   ],
-  
+
   // Handle uncaught exceptions and rejections
   exceptionHandlers: [
     new winston.transports.File({
@@ -87,7 +87,7 @@ const logger = winston.createLogger({
       maxFiles: 3
     })
   ],
-  
+
   rejectionHandlers: [
     new winston.transports.File({
       filename: path.join(logsDir, 'rejections.log'),
@@ -99,10 +99,12 @@ const logger = winston.createLogger({
 
 // Add console transport for non-production environments
 if (config.server.nodeEnv !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: consoleFormat,
-    level: 'debug'
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: consoleFormat,
+      level: 'debug'
+    })
+  );
 }
 
 /**
@@ -110,7 +112,7 @@ if (config.server.nodeEnv !== 'production') {
  * @param {Object} meta - Additional metadata for all logs
  * @returns {winston.Logger} Child logger instance
  */
-logger.child = (meta) => {
+logger.child = meta => {
   return logger.child(meta);
 };
 
