@@ -8,6 +8,9 @@ const Login = () => import('@/views/Auth/Login.vue')
 const Register = () => import('@/views/Auth/Register.vue')
 const Exchanges = () => import('@/views/Exchanges.vue')
 const Trading = () => import('@/views/Trading.vue')
+const PaperTrading = () => import('@/views/PaperTrading.vue')
+const Portfolio = () => import('@/views/Portfolio.vue')
+const Analytics = () => import('@/views/Analytics.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -42,6 +45,24 @@ const routes: RouteRecordRaw[] = [
     path: '/trading',
     name: 'Trading',
     component: Trading,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/paper-trading',
+    name: 'PaperTrading',
+    component: PaperTrading,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/portfolio',
+    name: 'Portfolio',
+    component: Portfolio,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/analytics',
+    name: 'Analytics',
+    component: Analytics,
     meta: { requiresAuth: true }
   }
 ]

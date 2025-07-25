@@ -123,6 +123,9 @@ const mobileMenuOpen = ref(false)
 const navigation = [
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'Trading', href: '/trading' },
+  { name: 'Paper Trading', href: '/paper-trading' },
+  { name: 'Portfolio', href: '/portfolio' },
+  { name: 'Analytics', href: '/analytics' },
   { name: 'Exchanges', href: '/exchanges' },
 ]
 
