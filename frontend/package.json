@@ -1,0 +1,46 @@
+{
+  "name": "wire-trader-frontend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Vue.js frontend for Wire-Trader cryptocurrency trading platform",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix"
+  },
+  "keywords": [
+    "vue",
+    "typescript",
+    "trading",
+    "cryptocurrency",
+    "frontend"
+  ],
+  "author": "Wire-Trader Team",
+  "license": "MIT",
+  "dependencies": {
+    "@vueuse/core": "^13.5.0",
+    "axios": "^1.11.0",
+    "pinia": "^3.0.3",
+    "vite": "^7.0.6",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.32.0",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^24.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "@vue/eslint-config-typescript": "^14.6.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.32.0",
+    "eslint-plugin-vue": "^10.3.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.8.3",
+    "vue-eslint-parser": "^10.2.0",
+    "vue-tsc": "^3.0.4"
+  }
+}
