@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Write(*)",
+      "Read(*)",
+      "WebFetch(*)",
+      "gh(*)",
+      "git(*)",
+      "ls(*)",
+      "find(*)",
+      "npm(*)"
+    ],
+    "deny": []
+  },
+  "env": {
+    "CLAUDE_CODE_ENABLE_TELEMETRY": "1"
+  }
+}
