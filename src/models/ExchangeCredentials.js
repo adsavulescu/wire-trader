@@ -11,8 +11,7 @@ const exchangeCredentialsSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: [true, 'User ID is required'],
-    index: true
+    required: [true, 'User ID is required']
   },
 
   // Exchange information
@@ -120,7 +119,6 @@ const exchangeCredentialsSchema = new mongoose.Schema({
 
 // Compound index for user and exchange
 exchangeCredentialsSchema.index({ userId: 1, exchangeName: 1 }, { unique: true });
-exchangeCredentialsSchema.index({ userId: 1 });
 exchangeCredentialsSchema.index({ exchangeName: 1 });
 exchangeCredentialsSchema.index({ lastUsed: 1 });
 
