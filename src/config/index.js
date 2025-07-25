@@ -87,15 +87,11 @@ const config = {
  * @throws {Error} If required configuration is missing
  */
 function validateConfig() {
-  const requiredEnvVars = [
-    'JWT_SECRET',
-    'ENCRYPTION_KEY',
-    'MONGODB_URI'
-  ];
+  const requiredEnvVars = ['JWT_SECRET', 'ENCRYPTION_KEY', 'MONGODB_URI'];
 
   if (config.server.nodeEnv === 'production') {
     const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
-    
+
     if (missingVars.length > 0) {
       throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }

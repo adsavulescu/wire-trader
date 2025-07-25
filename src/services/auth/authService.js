@@ -73,7 +73,7 @@ class AuthService {
     try {
       // Find user and include password for comparison
       const user = await User.findByEmail(email).select('+password');
-      
+
       if (!user) {
         logger.logAuthEvent(null, 'login', false, ip, userAgent, 'User not found');
         throw new Error('Invalid email or password');
@@ -129,7 +129,7 @@ class AuthService {
   async getUserProfile(userId) {
     try {
       const user = await User.findById(userId);
-      
+
       if (!user) {
         throw new Error('User not found');
       }
@@ -218,7 +218,7 @@ class AuthService {
   async changePassword(userId, currentPassword, newPassword) {
     try {
       const user = await User.findById(userId).select('+password');
-      
+
       if (!user) {
         throw new Error('User not found');
       }
@@ -251,11 +251,7 @@ class AuthService {
    * @returns {string} JWT token
    */
   generateToken(userId) {
-    return jwt.sign(
-      { userId },
-      config.jwt.secret,
-      { expiresIn: config.jwt.expire }
-    );
+    return jwt.sign({ userId }, config.jwt.secret, { expiresIn: config.jwt.expire });
   }
 
   /**
@@ -283,11 +279,9 @@ class AuthService {
    * @returns {string} Refresh token
    */
   generateRefreshToken(userId) {
-    return jwt.sign(
-      { userId, type: 'refresh' },
-      config.jwt.secret,
-      { expiresIn: config.jwt.refreshExpire }
-    );
+    return jwt.sign({ userId, type: 'refresh' }, config.jwt.secret, {
+      expiresIn: config.jwt.refreshExpire
+    });
   }
 
   /**
@@ -298,7 +292,7 @@ class AuthService {
   async refreshToken(refreshToken) {
     try {
       const decoded = jwt.verify(refreshToken, config.jwt.secret);
-      
+
       if (decoded.type !== 'refresh') {
         throw new Error('Invalid refresh token');
       }
@@ -335,11 +329,7 @@ class AuthService {
    */
   async deactivateAccount(userId) {
     try {
-      const user = await User.findByIdAndUpdate(
-        userId,
-        { isActive: false },
-        { new: true }
-      );
+      const user = await User.findByIdAndUpdate(userId, { isActive: false }, { new: true });
 
       if (!user) {
         throw new Error('User not found');
@@ -359,13 +349,13 @@ class AuthService {
 
   /**
    * Get user statistics
-   * @param {string} userId - User ID  
+   * @param {string} userId - User ID
    * @returns {Promise<Object>} User statistics
    */
   async getUserStats(userId) {
     try {
       const user = await User.findById(userId);
-      
+
       if (!user) {
         throw new Error('User not found');
       }
@@ -393,7 +383,7 @@ class AuthService {
   async hasPermission(userId, permission) {
     try {
       const user = await User.findById(userId);
-      
+
       if (!user || !user.isActive) {
         return false;
       }
@@ -401,7 +391,7 @@ class AuthService {
       // Add permission logic here based on user roles/subscriptions
       // For now, all active users have basic permissions
       const basicPermissions = ['trade', 'view_balance', 'manage_exchanges'];
-      
+
       return basicPermissions.includes(permission);
     } catch (error) {
       logger.error('Permission check failed:', error);

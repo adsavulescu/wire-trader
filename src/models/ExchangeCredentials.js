@@ -6,116 +6,119 @@ const config = require('../config');
  * Exchange Credentials Schema
  * Stores encrypted API credentials for various exchanges
  */
-const exchangeCredentialsSchema = new mongoose.Schema({
-  // User reference
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: [true, 'User ID is required']
-  },
+const exchangeCredentialsSchema = new mongoose.Schema(
+  {
+    // User reference
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User ID is required']
+    },
 
-  // Exchange information
-  exchangeName: {
-    type: String,
-    required: [true, 'Exchange name is required'],
-    enum: ['binance', 'coinbase', 'kraken'],
-    lowercase: true
-  },
+    // Exchange information
+    exchangeName: {
+      type: String,
+      required: [true, 'Exchange name is required'],
+      enum: ['binance', 'coinbase', 'kraken'],
+      lowercase: true
+    },
 
-  exchangeDisplayName: {
-    type: String,
-    required: true
-  },
+    exchangeDisplayName: {
+      type: String,
+      required: true
+    },
 
-  // Encrypted credentials
-  encryptedApiKey: {
-    type: String,
-    required: [true, 'API key is required']
-  },
+    // Encrypted credentials
+    encryptedApiKey: {
+      type: String,
+      required: [true, 'API key is required']
+    },
 
-  encryptedSecret: {
-    type: String,
-    required: [true, 'Secret key is required']
-  },
+    encryptedSecret: {
+      type: String,
+      required: [true, 'Secret key is required']
+    },
 
-  encryptedPassphrase: {
-    type: String,
-    // Only required for exchanges that need it (like Coinbase)
-    required: function() {
-      return this.exchangeName === 'coinbase';
+    encryptedPassphrase: {
+      type: String,
+      // Only required for exchanges that need it (like Coinbase)
+      required: function () {
+        return this.exchangeName === 'coinbase';
+      }
+    },
+
+    // IV (Initialization Vector) for encryption
+    iv: {
+      type: String,
+      required: true
+    },
+
+    // Settings
+    sandbox: {
+      type: Boolean,
+      default: false
+    },
+
+    // Status and metadata
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+
+    lastUsed: {
+      type: Date,
+      default: Date.now
+    },
+
+    lastConnectionTest: {
+      type: Date
+    },
+
+    connectionStatus: {
+      type: String,
+      enum: ['connected', 'disconnected', 'error', 'untested'],
+      default: 'untested'
+    },
+
+    lastError: {
+      type: String
+    },
+
+    // Permissions (if supported by exchange)
+    permissions: {
+      spot: {
+        type: Boolean,
+        default: false
+      },
+      futures: {
+        type: Boolean,
+        default: false
+      },
+      margin: {
+        type: Boolean,
+        default: false
+      },
+      withdraw: {
+        type: Boolean,
+        default: false
+      }
     }
   },
-
-  // IV (Initialization Vector) for encryption
-  iv: {
-    type: String,
-    required: true
-  },
-
-  // Settings
-  sandbox: {
-    type: Boolean,
-    default: false
-  },
-
-  // Status and metadata
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-
-  lastUsed: {
-    type: Date,
-    default: Date.now
-  },
-
-  lastConnectionTest: {
-    type: Date
-  },
-
-  connectionStatus: {
-    type: String,
-    enum: ['connected', 'disconnected', 'error', 'untested'],
-    default: 'untested'
-  },
-
-  lastError: {
-    type: String
-  },
-
-  // Permissions (if supported by exchange)
-  permissions: {
-    spot: {
-      type: Boolean,
-      default: false
-    },
-    futures: {
-      type: Boolean,
-      default: false
-    },
-    margin: {
-      type: Boolean,
-      default: false
-    },
-    withdraw: {
-      type: Boolean,
-      default: false
+  {
+    timestamps: true,
+    toJSON: {
+      transform: function (doc, ret) {
+        // Never expose encrypted credentials in JSON
+        delete ret.encryptedApiKey;
+        delete ret.encryptedSecret;
+        delete ret.encryptedPassphrase;
+        delete ret.iv;
+        delete ret.__v;
+        return ret;
+      }
     }
   }
-}, {
-  timestamps: true,
-  toJSON: {
-    transform: function(doc, ret) {
-      // Never expose encrypted credentials in JSON
-      delete ret.encryptedApiKey;
-      delete ret.encryptedSecret;
-      delete ret.encryptedPassphrase;
-      delete ret.iv;
-      delete ret.__v;
-      return ret;
-    }
-  }
-});
+);
 
 // Compound index for user and exchange
 exchangeCredentialsSchema.index({ userId: 1, exchangeName: 1 }, { unique: true });
@@ -161,7 +164,7 @@ function decrypt(encryptedData, ivHex) {
 /**
  * Pre-save middleware to encrypt credentials
  */
-exchangeCredentialsSchema.pre('save', function(next) {
+exchangeCredentialsSchema.pre('save', function (next) {
   try {
     // Only encrypt if credentials are being modified
     if (this.isModified('apiKey') || this.isModified('secret') || this.isModified('passphrase')) {
@@ -200,7 +203,7 @@ exchangeCredentialsSchema.pre('save', function(next) {
  * Instance method to get decrypted credentials
  * @returns {Object} Decrypted credentials
  */
-exchangeCredentialsSchema.methods.getDecryptedCredentials = function() {
+exchangeCredentialsSchema.methods.getDecryptedCredentials = function () {
   try {
     const credentials = {
       apiKey: decrypt(this.encryptedApiKey, this.iv),
@@ -221,7 +224,7 @@ exchangeCredentialsSchema.methods.getDecryptedCredentials = function() {
 /**
  * Instance method to update last used timestamp
  */
-exchangeCredentialsSchema.methods.updateLastUsed = async function() {
+exchangeCredentialsSchema.methods.updateLastUsed = async function () {
   this.lastUsed = new Date();
   await this.save();
 };
@@ -231,10 +234,10 @@ exchangeCredentialsSchema.methods.updateLastUsed = async function() {
  * @param {string} status - Connection status
  * @param {string} error - Error message if any
  */
-exchangeCredentialsSchema.methods.updateConnectionStatus = async function(status, error = null) {
+exchangeCredentialsSchema.methods.updateConnectionStatus = async function (status, error = null) {
   this.connectionStatus = status;
   this.lastConnectionTest = new Date();
-  
+
   if (error) {
     this.lastError = error;
   } else {
@@ -248,7 +251,7 @@ exchangeCredentialsSchema.methods.updateConnectionStatus = async function(status
  * Instance method to update permissions
  * @param {Object} permissionsData - Permissions object
  */
-exchangeCredentialsSchema.methods.updatePermissions = async function(permissionsData) {
+exchangeCredentialsSchema.methods.updatePermissions = async function (permissionsData) {
   this.permissions = {
     ...this.permissions,
     ...permissionsData
@@ -262,11 +265,11 @@ exchangeCredentialsSchema.methods.updatePermissions = async function(permissions
  * @param {string} exchangeName - Exchange name
  * @returns {Promise<Object>} Credentials document
  */
-exchangeCredentialsSchema.statics.findByUserAndExchange = function(userId, exchangeName) {
-  return this.findOne({ 
-    userId: userId, 
+exchangeCredentialsSchema.statics.findByUserAndExchange = function (userId, exchangeName) {
+  return this.findOne({
+    userId: userId,
     exchangeName: exchangeName.toLowerCase(),
-    isActive: true 
+    isActive: true
   });
 };
 
@@ -275,10 +278,10 @@ exchangeCredentialsSchema.statics.findByUserAndExchange = function(userId, excha
  * @param {string} userId - User ID
  * @returns {Promise<Array>} Array of credentials documents
  */
-exchangeCredentialsSchema.statics.findActiveByUser = function(userId) {
-  return this.find({ 
-    userId: userId, 
-    isActive: true 
+exchangeCredentialsSchema.statics.findActiveByUser = function (userId) {
+  return this.find({
+    userId: userId,
+    isActive: true
   }).sort({ lastUsed: -1 });
 };
 
@@ -287,14 +290,11 @@ exchangeCredentialsSchema.statics.findActiveByUser = function(userId) {
  * @param {number} hoursOld - Hours since last test
  * @returns {Promise<Array>} Array of credentials documents
  */
-exchangeCredentialsSchema.statics.findNeedingHealthCheck = function(hoursOld = 24) {
-  const cutoffTime = new Date(Date.now() - (hoursOld * 60 * 60 * 1000));
+exchangeCredentialsSchema.statics.findNeedingHealthCheck = function (hoursOld = 24) {
+  const cutoffTime = new Date(Date.now() - hoursOld * 60 * 60 * 1000);
   return this.find({
     isActive: true,
-    $or: [
-      { lastConnectionTest: { $lt: cutoffTime } },
-      { lastConnectionTest: { $exists: false } }
-    ]
+    $or: [{ lastConnectionTest: { $lt: cutoffTime } }, { lastConnectionTest: { $exists: false } }]
   });
 };
 
@@ -303,15 +303,8 @@ exchangeCredentialsSchema.statics.findNeedingHealthCheck = function(hoursOld = 2
  * @param {Object} data - Credentials data
  * @returns {Promise<Object>} Created credentials document
  */
-exchangeCredentialsSchema.statics.createWithEncryption = async function(data) {
-  const {
-    userId,
-    exchangeName,
-    apiKey,
-    secret,
-    passphrase,
-    sandbox = false
-  } = data;
+exchangeCredentialsSchema.statics.createWithEncryption = async function (data) {
+  const { userId, exchangeName, apiKey, secret, passphrase, sandbox = false } = data;
 
   // Get exchange display name
   const displayNames = {

@@ -7,6 +7,7 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const database = require('./config/database');
 const logger = require('./utils/logger');
+const websocketService = require('./services/websocket/websocketService');
 
 // Import middleware
 const { auditLog } = require('./middleware/auth');
@@ -14,6 +15,8 @@ const { auditLog } = require('./middleware/auth');
 // Import routes
 const authRoutes = require('./routes/auth');
 const exchangeRoutes = require('./routes/exchanges');
+const tradingRoutes = require('./routes/trading');
+const marketRoutes = require('./routes/market');
 
 /**
  * Wire-Trader Application
@@ -32,16 +35,16 @@ class WireTraderApp {
     try {
       // Connect to database
       await this.connectDatabase();
-      
+
       // Setup middleware
       this.setupMiddleware();
-      
+
       // Setup routes
       this.setupRoutes();
-      
+
       // Setup error handling
       this.setupErrorHandling();
-      
+
       logger.info('Wire-Trader application initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize application:', error);
@@ -67,25 +70,29 @@ class WireTraderApp {
    */
   setupMiddleware() {
     // Security middleware
-    this.app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ['\'self\''],
-          styleSrc: ['\'self\'', '\'unsafe-inline\''],
-          scriptSrc: ['\'self\''],
-          imgSrc: ['\'self\'', 'data:', 'https:']
-        }
-      },
-      crossOriginEmbedderPolicy: false
-    }));
+    this.app.use(
+      helmet({
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            scriptSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:']
+          }
+        },
+        crossOriginEmbedderPolicy: false
+      })
+    );
 
     // CORS configuration
-    this.app.use(cors({
-      origin: config.server.corsOrigin,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-    }));
+    this.app.use(
+      cors({
+        origin: config.server.corsOrigin,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+      })
+    );
 
     // Rate limiting
     const limiter = rateLimit({
@@ -116,13 +123,13 @@ class WireTraderApp {
     // Request/response logging middleware
     this.app.use((req, res, next) => {
       const originalSend = res.send;
-      
-      res.send = function(data) {
+
+      res.send = function (data) {
         const duration = Date.now() - req.startTime;
         logger.logHttpRequest(req, res, duration);
         originalSend.call(this, data);
       };
-      
+
       next();
     });
 
@@ -137,7 +144,7 @@ class WireTraderApp {
     this.app.get('/health', async (req, res) => {
       try {
         const dbHealth = database.getHealthStatus();
-        
+
         res.json({
           success: true,
           message: 'Wire-Trader API is healthy',
@@ -165,6 +172,8 @@ class WireTraderApp {
     // API routes
     this.app.use('/api/auth', authRoutes);
     this.app.use('/api/exchanges', exchangeRoutes);
+    this.app.use('/api/trading', tradingRoutes);
+    this.app.use('/api/market', marketRoutes);
 
     // API documentation endpoint
     this.app.get('/api', (req, res) => {
@@ -195,6 +204,27 @@ class WireTraderApp {
               balances: 'GET /api/exchanges/balances',
               exchangeBalance: 'GET /api/exchanges/:exchangeName/balance',
               test: 'POST /api/exchanges/:exchangeName/test'
+            },
+            trading: {
+              placeOrder: 'POST /api/trading/orders',
+              orderHistory: 'GET /api/trading/orders',
+              activeOrders: 'GET /api/trading/orders/active',
+              getOrder: 'GET /api/trading/orders/:orderId',
+              refreshOrder: 'PUT /api/trading/orders/:orderId/refresh',
+              cancelOrder: 'DELETE /api/trading/orders/:orderId',
+              stats: 'GET /api/trading/stats'
+            },
+            market: {
+              ticker: 'GET /api/market/ticker/:exchange/:symbol',
+              unifiedTicker: 'GET /api/market/ticker/:symbol',
+              orderbook: 'GET /api/market/orderbook/:exchange/:symbol',
+              unifiedOrderbook: 'GET /api/market/orderbook/:symbol',
+              trades: 'GET /api/market/trades/:exchange/:symbol',
+              candles: 'GET /api/market/candles/:exchange/:symbol',
+              markets: 'GET /api/market/markets/:exchange',
+              arbitrage: 'GET /api/market/arbitrage/:symbol',
+              clearCache: 'POST /api/market/cache/clear',
+              stats: 'GET /api/market/stats'
             }
           },
           supportedExchanges: ['binance', 'coinbase', 'kraken'],
@@ -269,9 +299,8 @@ class WireTraderApp {
 
       // Default error response
       const statusCode = error.statusCode || error.status || 500;
-      const message = config.server.nodeEnv === 'production' 
-        ? 'Internal server error' 
-        : error.message;
+      const message =
+        config.server.nodeEnv === 'production' ? 'Internal server error' : error.message;
 
       res.status(statusCode).json({
         success: false,
@@ -288,7 +317,7 @@ class WireTraderApp {
     });
 
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
+    process.on('uncaughtException', error => {
       logger.error('Uncaught Exception:', error);
       // Close server gracefully
       this.gracefulShutdown('UNCAUGHT_EXCEPTION');
@@ -314,8 +343,11 @@ class WireTraderApp {
   async start() {
     try {
       const port = config.server.port;
-      
+
       this.server = this.app.listen(port, () => {
+        // Initialize WebSocket service
+        websocketService.initialize(this.server);
+
         logger.info('Wire-Trader server started successfully', {
           port: port,
           environment: config.server.nodeEnv,
@@ -325,6 +357,7 @@ class WireTraderApp {
         // Log startup information
         console.log('\n🚀 Wire-Trader API Server Started');
         console.log(`📡 Server: http://localhost:${port}`);
+        console.log(`🔌 WebSocket: ws://localhost:${port}`);
         console.log(`🏥 Health: http://localhost:${port}/health`);
         console.log(`📚 API Docs: http://localhost:${port}/api`);
         console.log(`🌍 Environment: ${config.server.nodeEnv}`);
@@ -333,7 +366,7 @@ class WireTraderApp {
       });
 
       // Handle server errors
-      this.server.on('error', (error) => {
+      this.server.on('error', error => {
         if (error.code === 'EADDRINUSE') {
           logger.error(`Port ${port} is already in use`);
         } else {
@@ -354,6 +387,14 @@ class WireTraderApp {
    */
   async gracefulShutdown(signal) {
     logger.info(`Received ${signal}, starting graceful shutdown...`);
+
+    // Close WebSocket service
+    try {
+      websocketService.disconnect();
+      logger.info('WebSocket service closed');
+    } catch (error) {
+      logger.error('Error closing WebSocket service:', error);
+    }
 
     // Close server
     if (this.server) {

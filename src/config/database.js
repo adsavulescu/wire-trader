@@ -30,16 +30,18 @@ class Database {
         return true;
       }
 
-      logger.info('Connecting to MongoDB...', { uri: config.database.mongoUri.replace(/\/\/.*@/, '//***:***@') });
-      
+      logger.info('Connecting to MongoDB...', {
+        uri: config.database.mongoUri.replace(/\/\/.*@/, '//***:***@')
+      });
+
       await mongoose.connect(config.database.mongoUri, this.connectionOptions);
-      
+
       this.isConnected = true;
       logger.info('Successfully connected to MongoDB');
-      
+
       // Set up connection event listeners
       this.setupEventListeners();
-      
+
       return true;
     } catch (error) {
       logger.error('MongoDB connection failed:', error);
@@ -101,7 +103,7 @@ class Database {
       this.isConnected = true;
     });
 
-    mongoose.connection.on('error', (error) => {
+    mongoose.connection.on('error', error => {
       logger.error('Mongoose connection error:', error);
       this.isConnected = false;
     });
@@ -147,7 +149,7 @@ class Database {
       const collection = collections[key];
       await collection.deleteMany({});
     }
-    
+
     logger.info('Database cleared');
   }
 }

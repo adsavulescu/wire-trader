@@ -58,10 +58,10 @@ class ExchangeManager {
       }
 
       const exchange = new ExchangeClass(exchangeConfig);
-      
+
       // Test connection
       await this.testConnection(exchange);
-      
+
       logger.info(`Successfully created ${exchangeName} exchange instance`, {
         exchange: exchangeName,
         sandbox
@@ -109,7 +109,7 @@ class ExchangeManager {
     try {
       const exchange = await this.createExchange(exchangeName, credentials, sandbox);
       const exchangeId = `${userId}_${exchangeName}`;
-      
+
       this.exchanges.set(exchangeId, {
         exchange,
         userId,
@@ -146,12 +146,12 @@ class ExchangeManager {
   getExchange(userId, exchangeName) {
     const exchangeId = `${userId}_${exchangeName}`;
     const exchangeData = this.exchanges.get(exchangeId);
-    
+
     if (exchangeData) {
       exchangeData.lastUsed = new Date();
       return exchangeData.exchange;
     }
-    
+
     return null;
   }
 
@@ -164,7 +164,7 @@ class ExchangeManager {
   removeExchange(userId, exchangeName) {
     const exchangeId = `${userId}_${exchangeName}`;
     const deleted = this.exchanges.delete(exchangeId);
-    
+
     if (deleted) {
       logger.info('Removed exchange for user', {
         userId,
@@ -172,7 +172,7 @@ class ExchangeManager {
         exchangeId
       });
     }
-    
+
     return deleted;
   }
 
@@ -183,7 +183,7 @@ class ExchangeManager {
    */
   getUserExchanges(userId) {
     const userExchanges = [];
-    
+
     for (const [exchangeId, exchangeData] of this.exchanges) {
       if (exchangeData.userId === userId) {
         userExchanges.push({
@@ -197,7 +197,7 @@ class ExchangeManager {
         });
       }
     }
-    
+
     return userExchanges;
   }
 
@@ -248,13 +248,15 @@ class ExchangeManager {
       try {
         const exchange = this.getExchange(userId, exchangeInfo.name);
         const balance = await exchange.fetchBalance();
-        
+
         exchangeBalances[exchangeInfo.name] = balance;
 
         // Aggregate balances by currency
         for (const [currency, amounts] of Object.entries(balance)) {
-          if (currency === 'info') {continue;}
-          
+          if (currency === 'info') {
+            continue;
+          }
+
           if (!unifiedBalance[currency]) {
             unifiedBalance[currency] = {
               free: 0,
@@ -325,7 +327,7 @@ class ExchangeManager {
         websocket: true
       }
     };
-    
+
     return features[exchangeName] || {};
   }
 
@@ -334,7 +336,7 @@ class ExchangeManager {
    * @param {number} maxInactiveHours - Maximum inactive hours before cleanup
    */
   cleanupInactiveExchanges(maxInactiveHours = 24) {
-    const cutoffTime = new Date(Date.now() - (maxInactiveHours * 60 * 60 * 1000));
+    const cutoffTime = new Date(Date.now() - maxInactiveHours * 60 * 60 * 1000);
     let cleanedCount = 0;
 
     for (const [exchangeId, exchangeData] of this.exchanges) {
