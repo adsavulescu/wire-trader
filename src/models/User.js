@@ -51,32 +51,245 @@ const userSchema = new mongoose.Schema(
 
     // User preferences
     preferences: {
+      // Display preferences
       baseCurrency: {
         type: String,
-        default: 'USD',
-        enum: ['USD', 'EUR', 'BTC', 'ETH']
+        default: 'USDT',
+        enum: ['USD', 'EUR', 'USDT', 'USDC', 'BTC', 'ETH']
       },
       theme: {
         type: String,
         default: 'light',
-        enum: ['light', 'dark']
+        enum: ['light', 'dark', 'auto']
       },
       timezone: {
         type: String,
         default: 'UTC'
       },
+      language: {
+        type: String,
+        default: 'en',
+        enum: ['en', 'es', 'fr', 'de', 'zh', 'ja', 'ko']
+      },
+      dateFormat: {
+        type: String,
+        default: 'MM/DD/YYYY',
+        enum: ['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD']
+      },
+      
+      // Trading preferences
+      trading: {
+        defaultOrderType: {
+          type: String,
+          default: 'limit',
+          enum: ['market', 'limit', 'stop', 'stop_limit']
+        },
+        defaultTimeInForce: {
+          type: String,
+          default: 'GTC',
+          enum: ['GTC', 'IOC', 'FOK']
+        },
+        confirmBeforeOrder: {
+          type: Boolean,
+          default: true
+        },
+        showAdvancedOrderTypes: {
+          type: Boolean,
+          default: false
+        },
+        enablePaperTrading: {
+          type: Boolean,
+          default: false
+        },
+        autoRefreshInterval: {
+          type: Number,
+          default: 5000, // milliseconds
+          min: 1000,
+          max: 60000
+        }
+      },
+
+      // Chart preferences
+      charts: {
+        defaultTimeframe: {
+          type: String,
+          default: '1h',
+          enum: ['1m', '5m', '15m', '30m', '1h', '4h', '1d', '1w']
+        },
+        showVolume: {
+          type: Boolean,
+          default: true
+        },
+        showGrid: {
+          type: Boolean,
+          default: true
+        },
+        chartType: {
+          type: String,
+          default: 'candlestick',
+          enum: ['candlestick', 'line', 'area', 'ohlc']
+        },
+        indicators: [{
+          name: String,
+          enabled: Boolean,
+          parameters: Object
+        }]
+      },
+
+      // Dashboard preferences
+      dashboard: {
+        layout: {
+          type: String,
+          default: 'grid',
+          enum: ['grid', 'list', 'compact']
+        },
+        widgets: [{
+          type: {
+            type: String,
+            enum: ['portfolio', 'watchlist', 'orders', 'trades', 'news', 'chart']
+          },
+          position: {
+            x: Number,
+            y: Number,
+            width: Number,
+            height: Number
+          },
+          settings: Object,
+          enabled: {
+            type: Boolean,
+            default: true
+          }
+        }],
+        refreshInterval: {
+          type: Number,
+          default: 30000, // 30 seconds
+          min: 5000,
+          max: 300000
+        }
+      },
+
+      // Watchlist preferences
+      watchlists: [{
+        name: {
+          type: String,
+          required: true
+        },
+        symbols: [String],
+        sortBy: {
+          type: String,
+          default: 'symbol',
+          enum: ['symbol', 'price', 'change', 'volume']
+        },
+        sortOrder: {
+          type: String,
+          default: 'asc',
+          enum: ['asc', 'desc']
+        },
+        isDefault: {
+          type: Boolean,
+          default: false
+        }
+      }],
+
+      // Notification preferences
       notifications: {
         email: {
+          enabled: {
+            type: Boolean,
+            default: true
+          },
+          orderUpdates: {
+            type: Boolean,
+            default: true
+          },
+          priceAlerts: {
+            type: Boolean,
+            default: true
+          },
+          tradingSignals: {
+            type: Boolean,
+            default: false
+          },
+          weeklyReports: {
+            type: Boolean,
+            default: true
+          },
+          securityAlerts: {
+            type: Boolean,
+            default: true
+          }
+        },
+        push: {
+          enabled: {
+            type: Boolean,
+            default: false
+          },
+          orderFills: {
+            type: Boolean,
+            default: true
+          },
+          priceMovements: {
+            type: Boolean,
+            default: false
+          },
+          portfolioUpdates: {
+            type: Boolean,
+            default: false
+          }
+        },
+        sound: {
+          enabled: {
+            type: Boolean,
+            default: true
+          },
+          orderFills: {
+            type: Boolean,
+            default: true
+          },
+          priceAlerts: {
+            type: Boolean,
+            default: true
+          },
+          volume: {
+            type: Number,
+            default: 0.5,
+            min: 0,
+            max: 1
+          }
+        }
+      },
+
+      // Privacy preferences
+      privacy: {
+        sharePortfolioStats: {
+          type: Boolean,
+          default: false
+        },
+        showOnLeaderboard: {
+          type: Boolean,
+          default: false
+        },
+        allowAnalytics: {
           type: Boolean,
           default: true
         },
-        priceAlerts: {
+        marketingEmails: {
           type: Boolean,
-          default: true
+          default: false
+        }
+      },
+
+      // API preferences
+      api: {
+        enableWebhooks: {
+          type: Boolean,
+          default: false
         },
-        orderUpdates: {
-          type: Boolean,
-          default: true
+        webhookUrl: String,
+        rateLimitTier: {
+          type: String,
+          default: 'basic',
+          enum: ['basic', 'premium', 'enterprise']
         }
       }
     },

@@ -67,18 +67,41 @@ const config = {
       secret: process.env.KRAKEN_SECRET_KEY,
       rateLimit: 15, // requests per second
       enabled: true
+    },
+    ftx: {
+      apiKey: process.env.FTX_API_KEY,
+      secret: process.env.FTX_SECRET_KEY,
+      subAccount: process.env.FTX_SUBACCOUNT,
+      sandbox: process.env.FTX_SANDBOX === 'true',
+      rateLimit: 30, // requests per second
+      enabled: true
+    },
+    kucoin: {
+      apiKey: process.env.KUCOIN_API_KEY,
+      secret: process.env.KUCOIN_SECRET_KEY,
+      passphrase: process.env.KUCOIN_PASSPHRASE,
+      sandbox: process.env.KUCOIN_SANDBOX === 'true',
+      rateLimit: 10, // requests per second
+      enabled: true
     }
   },
 
-  // Redis configuration (for future caching)
-  redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
-    ttl: parseInt(process.env.REDIS_TTL) || 3600
-  },
 
   // Security configuration
   security: {
     sessionSecret: process.env.SESSION_SECRET || 'default-session-secret'
+  },
+
+  // API Gateway configuration
+  gateway: {
+    port: parseInt(process.env.GATEWAY_PORT) || 3001,
+    enabled: process.env.GATEWAY_ENABLED !== 'false',
+    services: {
+      coreApi: {
+        url: process.env.CORE_API_URL || `http://localhost:${process.env.PORT || 3000}`,
+        timeout: parseInt(process.env.SERVICE_TIMEOUT) || 30000
+      }
+    }
   }
 };
 

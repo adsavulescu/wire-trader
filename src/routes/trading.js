@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 
 const orderSchema = Joi.object({
-  exchangeName: Joi.string().valid('binance', 'coinbase', 'kraken').required(),
+  exchangeName: Joi.string().valid('binance', 'coinbase', 'kraken', 'ftx', 'kucoin').required(),
   symbol: Joi.string()
     .pattern(/^[A-Z]+\/[A-Z]+$/)
     .required(),
@@ -36,7 +36,7 @@ const orderSchema = Joi.object({
 });
 
 const orderHistorySchema = Joi.object({
-  exchangeName: Joi.string().valid('binance', 'coinbase', 'kraken').optional(),
+  exchangeName: Joi.string().valid('binance', 'coinbase', 'kraken', 'ftx', 'kucoin').optional(),
   symbol: Joi.string()
     .pattern(/^[A-Z]+\/[A-Z]+$/)
     .optional(),
@@ -186,7 +186,7 @@ router.get('/orders/active', authenticate, async (req, res) => {
   try {
     const { exchangeName } = req.query;
 
-    if (exchangeName && !['binance', 'coinbase', 'kraken'].includes(exchangeName)) {
+    if (exchangeName && !['binance', 'coinbase', 'kraken', 'ftx', 'kucoin'].includes(exchangeName)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid exchange name'

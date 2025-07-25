@@ -11,7 +11,7 @@ const orderSchema = new mongoose.Schema(
     exchangeName: {
       type: String,
       required: true,
-      enum: ['binance', 'coinbase', 'kraken'],
+      enum: ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin', 'paper_trading'],
       index: true
     },
     symbol: {
@@ -23,7 +23,7 @@ const orderSchema = new mongoose.Schema(
     type: {
       type: String,
       required: true,
-      enum: ['market', 'limit', 'stop', 'stop_limit', 'take_profit'],
+      enum: ['market', 'limit', 'stop', 'stop_limit', 'take_profit', 'oco', 'trailing_stop', 'iceberg'],
       default: 'market'
     },
     side: {
@@ -47,7 +47,7 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ['pending', 'open', 'closed', 'canceled', 'expired', 'rejected'],
+      enum: ['pending', 'open', 'closed', 'canceled', 'cancelled', 'expired', 'rejected', 'filled', 'partially_filled'],
       default: 'pending',
       index: true
     },
@@ -114,13 +114,90 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
+    // Advanced order type fields
+    advancedOrderData: {
+      // OCO (One-Cancels-Other) order data
+      oco: {
+        orderListId: String,
+        contingencyType: {
+          type: String,
+          enum: ['OCO']
+        },
+        listStatusType: {
+          type: String,
+          enum: ['RESPONSE', 'EXEC_STARTED', 'ALL_DONE']
+        },
+        listOrderStatus: {
+          type: String,
+          enum: ['EXECUTING', 'ALL_DONE', 'REJECT']
+        },
+        linkedOrderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Order'
+        }
+      },
+      
+      // Trailing Stop order data
+      trailingStop: {
+        trailingAmount: Number,        // Fixed trailing amount
+        trailingPercent: Number,       // Percentage trailing amount
+        activationPrice: Number,       // Price at which trailing starts
+        currentStopPrice: Number,      // Current stop price (updated dynamically)
+        highestPrice: Number,          // For sell orders - highest price seen
+        lowestPrice: Number,           // For buy orders - lowest price seen
+        isActivated: {
+          type: Boolean,
+          default: false
+        }
+      },
+      
+      // Iceberg order data
+      iceberg: {
+        visibleSize: Number,           // Visible order size
+        totalSize: Number,             // Total order size
+        executedSize: Number,          // Amount already executed
+        hiddenRemaining: Number,       // Hidden remaining amount
+        childOrders: [{
+          orderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Order'
+          },
+          size: Number,
+          status: String,
+          createdAt: Date
+        }]
+      }
+    },
+
+    // Paper trading flag
+    isPaperTrade: {
+      type: Boolean,
+      default: false,
+      index: true
+    },
+
+    // Additional execution data
+    executedAt: Date,
+    cancelledAt: Date,
+    averagePrice: Number,
+
     metadata: {
       strategy: String,
       notes: String,
       parentOrderId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Order'
-      }
+      },
+      relatedOrders: [{
+        orderId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Order'
+        },
+        relationship: {
+          type: String,
+          enum: ['child', 'parent', 'sibling', 'linked']
+        }
+      }]
     },
     timestamps: {
       created: {
@@ -166,9 +243,7 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-orderSchema.virtual('averagePrice').get(function () {
-  return this.filled > 0 ? this.cost / this.filled : 0;
-});
+// Remove virtual averagePrice since we added it as a real field
 
 orderSchema.virtual('fillPercentage').get(function () {
   return this.amount > 0 ? (this.filled / this.amount) * 100 : 0;

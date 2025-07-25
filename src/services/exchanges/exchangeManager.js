@@ -9,7 +9,7 @@ const logger = require('../../utils/logger');
 class ExchangeManager {
   constructor() {
     this.exchanges = new Map();
-    this.supportedExchanges = ['binance', 'coinbase', 'kraken'];
+    this.supportedExchanges = ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin'];
     this.rateLimiters = new Map();
   }
 
@@ -293,7 +293,9 @@ class ExchangeManager {
     const displayNames = {
       binance: 'Binance',
       coinbase: 'Coinbase Pro',
-      kraken: 'Kraken'
+      kraken: 'Kraken',
+      ftx: 'FTX',
+      kucoin: 'KuCoin'
     };
     return displayNames[exchangeName] || exchangeName;
   }
@@ -320,6 +322,20 @@ class ExchangeManager {
         websocket: true
       },
       kraken: {
+        spot: true,
+        futures: true,
+        margin: true,
+        options: false,
+        websocket: true
+      },
+      ftx: {
+        spot: true,
+        futures: true,
+        margin: true,
+        options: true,
+        websocket: true
+      },
+      kucoin: {
         spot: true,
         futures: true,
         margin: true,
