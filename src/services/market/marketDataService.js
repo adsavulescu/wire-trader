@@ -440,8 +440,14 @@ class MarketDataService {
       throw new Error(`Exchange ${exchangeName} is not supported or disabled`);
     }
 
-    const ccxt = require('ccxt');
-    const ExchangeClass = ccxt[exchangeName];
+    let ExchangeClass;
+    if (exchangeName === 'lcx') {
+      const LCXExchange = require('../exchanges/adapters/lcxAdapter');
+      ExchangeClass = LCXExchange;
+    } else {
+      const ccxt = require('ccxt');
+      ExchangeClass = ccxt[exchangeName];
+    }
 
     if (!ExchangeClass) {
       throw new Error(`Exchange class ${exchangeName} not found`);

@@ -3,14 +3,26 @@
     <div class="px-4 sm:px-0">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Trading</h1>
-        <p class="text-gray-600">Place orders and manage your trades</p>
+        <div class="flex justify-between items-center">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Trading</h1>
+            <p class="text-gray-600">Place orders and manage your trades</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <div class="text-sm text-gray-500">
+              Active Orders: <span class="font-semibold text-gray-900">{{ tradingStore.activeOrdersCount }}</span>
+            </div>
+            <div class="text-sm text-gray-500">
+              Open Value: <span class="font-semibold text-gray-900">${{ formatCurrency(tradingStore.openOrdersValue) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Trading Interface -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Main Trading Interface -->
+      <div class="grid grid-cols-1 xl:grid-cols-4 gap-8">
         <!-- Order Form -->
-        <div class="lg:col-span-1">
+        <div class="xl:col-span-1">
           <BaseCard title="Place Order">
             <form @submit.prevent="handlePlaceOrder" class="space-y-4">
               <!-- Exchange Selection -->
@@ -32,7 +44,7 @@
               <BaseInput
                 v-model="orderForm.symbol"
                 label="Trading Pair"
-                placeholder="BTC/USDT"
+                :placeholder="selectedSymbol || 'BTC/USDT'"
                 required
                 hint="Enter symbol in format: BTC/USDT"
               />
@@ -110,14 +122,27 @@
                 required
               />
 
+              <!-- Quick Amount Buttons -->
+              <div class="grid grid-cols-4 gap-2">
+                <button
+                  v-for="percentage in [25, 50, 75, 100]"
+                  :key="percentage"
+                  type="button"
+                  @click="setAmountPercentage(percentage)"
+                  class="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                >
+                  {{ percentage }}%
+                </button>
+              </div>
+
               <BaseButton
                 type="submit"
                 :variant="orderForm.side === 'buy' ? 'success' : 'danger'"
-                :loading="placingOrder"
+                :loading="tradingStore.loading"
                 :disabled="exchangeStore.connectedExchanges.length === 0"
                 fullWidth
               >
-                {{ placingOrder ? 'Placing Order...' : `${orderForm.side === 'buy' ? 'Buy' : 'Sell'} ${orderForm.symbol}` }}
+                {{ tradingStore.loading ? 'Placing Order...' : `${orderForm.side === 'buy' ? 'Buy' : 'Sell'} ${orderForm.symbol || 'Asset'}` }}
               </BaseButton>
             </form>
 
@@ -131,93 +156,36 @@
           </BaseCard>
         </div>
 
-        <!-- Market Information -->
-        <div class="lg:col-span-2">
-          <div class="grid grid-cols-1 gap-6">
-            <!-- Price Ticker -->
-            <BaseCard title="Market Data">
-              <div v-if="!selectedSymbol" class="text-center py-8 text-gray-500">
-                Select a trading pair to view market data
-              </div>
-              <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center">
-                  <p class="text-sm text-gray-500">Last Price</p>
-                  <p class="text-2xl font-bold text-gray-900">$42,350.00</p>
-                </div>
-                <div class="text-center">
-                  <p class="text-sm text-gray-500">24h Change</p>
-                  <p class="text-lg font-bold text-success-600">+2.34%</p>
-                </div>
-                <div class="text-center">
-                  <p class="text-sm text-gray-500">24h High</p>
-                  <p class="text-lg font-bold text-gray-900">$43,120.00</p>
-                </div>
-                <div class="text-center">
-                  <p class="text-sm text-gray-500">24h Low</p>
-                  <p class="text-lg font-bold text-gray-900">$41,850.00</p>
-                </div>
-              </div>
-            </BaseCard>
-
-            <!-- Order Book Preview -->
-            <BaseCard title="Order Book">
-              <div v-if="!selectedSymbol" class="text-center py-8 text-gray-500">
-                Select a trading pair to view order book
-              </div>
-              <div v-else class="grid grid-cols-2 gap-4">
-                <!-- Asks -->
-                <div>
-                  <h4 class="text-sm font-medium text-gray-700 mb-2">Asks (Sell Orders)</h4>
-                  <div class="space-y-1">
-                    <div v-for="i in 5" :key="`ask-${i}`" class="flex justify-between text-xs">
-                      <span class="text-danger-600">{{ (42350 + i * 10).toLocaleString() }}</span>
-                      <span class="text-gray-600">{{ (Math.random() * 2).toFixed(4) }}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Bids -->
-                <div>
-                  <h4 class="text-sm font-medium text-gray-700 mb-2">Bids (Buy Orders)</h4>
-                  <div class="space-y-1">
-                    <div v-for="i in 5" :key="`bid-${i}`" class="flex justify-between text-xs">
-                      <span class="text-success-600">{{ (42340 - i * 10).toLocaleString() }}</span>
-                      <span class="text-gray-600">{{ (Math.random() * 2).toFixed(4) }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </BaseCard>
-
-            <!-- Recent Orders -->
-            <BaseCard title="Your Recent Orders">
-              <div class="text-center py-8 text-gray-500">
-                <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                </svg>
-                <p>No recent orders</p>
-                <p class="text-sm text-gray-400 mt-1">Your trading history will appear here</p>
-              </div>
-            </BaseCard>
-          </div>
+        <!-- Market Data Panel -->
+        <div class="xl:col-span-3">
+          <MarketDataPanel @symbol-selected="handleSymbolSelected" />
         </div>
+      </div>
+
+      <!-- Active Orders Table -->
+      <div class="mt-8">
+        <ActiveOrdersTable />
       </div>
     </div>
   </AppLayout>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useExchangeStore } from '@/stores/exchanges'
+import { useTradingStore } from '@/stores/trading'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseCard from '@/components/common/BaseCard.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
 import BaseInput from '@/components/common/BaseInput.vue'
+import MarketDataPanel from '@/components/trading/MarketDataPanel.vue'
+import ActiveOrdersTable from '@/components/trading/ActiveOrdersTable.vue'
 import type { OrderRequest } from '@/types'
 
 const exchangeStore = useExchangeStore()
+const tradingStore = useTradingStore()
 
-const placingOrder = ref(false)
+const selectedSymbol = ref('')
 
 const orderForm = reactive<OrderRequest & { price: number; stopPrice: number }>({
   symbol: '',
@@ -229,9 +197,24 @@ const orderForm = reactive<OrderRequest & { price: number; stopPrice: number }>(
   stopPrice: 0,
 })
 
-const selectedSymbol = computed(() => {
-  return orderForm.symbol ? orderForm.symbol.toUpperCase() : null
-})
+const formatCurrency = (value: number): string => {
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
+}
+
+const handleSymbolSelected = (symbol: string) => {
+  selectedSymbol.value = symbol
+  orderForm.symbol = symbol
+}
+
+const setAmountPercentage = (percentage: number) => {
+  // This would calculate based on available balance
+  // For now, just set a placeholder amount
+  const baseAmount = 0.1
+  orderForm.amount = (baseAmount * percentage) / 100
+}
 
 const handlePlaceOrder = async () => {
   if (!orderForm.exchange) {
@@ -259,27 +242,35 @@ const handlePlaceOrder = async () => {
     return
   }
 
-  placingOrder.value = true
+  // Prepare order request
+  const orderRequest: OrderRequest = {
+    symbol: orderForm.symbol,
+    type: orderForm.type,
+    side: orderForm.side,
+    amount: orderForm.amount,
+    exchange: orderForm.exchange,
+    ...(orderForm.type === 'limit' && { price: orderForm.price }),
+    ...(orderForm.type === 'stop' && { stopPrice: orderForm.stopPrice }),
+  }
 
-  try {
-    // For now, just simulate the order placement
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
+  const result = await tradingStore.placeOrder(orderRequest)
+  
+  if (result.success) {
     alert(`Order placed successfully!\n\nType: ${orderForm.type}\nSide: ${orderForm.side}\nSymbol: ${orderForm.symbol}\nAmount: ${orderForm.amount}\nExchange: ${orderForm.exchange}`)
     
     // Reset form
-    orderForm.symbol = ''
     orderForm.amount = 0
     orderForm.price = 0
     orderForm.stopPrice = 0
-  } catch (error) {
-    alert('Failed to place order. Please try again.')
-  } finally {
-    placingOrder.value = false
+  } else {
+    alert(`Failed to place order: ${result.error}`)
   }
 }
 
 onMounted(async () => {
-  await exchangeStore.fetchConnectedExchanges()
+  await Promise.all([
+    exchangeStore.fetchConnectedExchanges(),
+    tradingStore.fetchActiveOrders(),
+  ])
 })
 </script>

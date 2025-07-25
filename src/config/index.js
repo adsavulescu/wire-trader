@@ -83,6 +83,13 @@ const config = {
       sandbox: process.env.KUCOIN_SANDBOX === 'true',
       rateLimit: 10, // requests per second
       enabled: true
+    },
+    lcx: {
+      apiKey: process.env.LCX_API_KEY,
+      secret: process.env.LCX_SECRET_KEY,
+      sandbox: process.env.LCX_SANDBOX === 'true',
+      rateLimit: 1000, // ms rate limit
+      enabled: true
     }
   },
 

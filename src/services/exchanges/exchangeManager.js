@@ -1,4 +1,5 @@
 const ccxt = require('ccxt');
+const LCXExchange = require('./adapters/lcxAdapter');
 const config = require('../../config');
 const logger = require('../../utils/logger');
 
@@ -9,7 +10,7 @@ const logger = require('../../utils/logger');
 class ExchangeManager {
   constructor() {
     this.exchanges = new Map();
-    this.supportedExchanges = ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin'];
+    this.supportedExchanges = ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin', 'lcx'];
     this.rateLimiters = new Map();
   }
 
@@ -39,9 +40,15 @@ class ExchangeManager {
         throw new Error(`Exchange ${exchangeName} is not supported`);
       }
 
-      const ExchangeClass = ccxt[exchangeName];
+      let ExchangeClass;
+      if (exchangeName === 'lcx') {
+        ExchangeClass = LCXExchange;
+      } else {
+        ExchangeClass = ccxt[exchangeName];
+      }
+      
       if (!ExchangeClass) {
-        throw new Error(`Exchange class ${exchangeName} not found in CCXT`);
+        throw new Error(`Exchange class ${exchangeName} not found`);
       }
 
       const exchangeConfig = {
@@ -295,7 +302,8 @@ class ExchangeManager {
       coinbase: 'Coinbase Pro',
       kraken: 'Kraken',
       ftx: 'FTX',
-      kucoin: 'KuCoin'
+      kucoin: 'KuCoin',
+      lcx: 'LCX'
     };
     return displayNames[exchangeName] || exchangeName;
   }
@@ -341,6 +349,13 @@ class ExchangeManager {
         margin: true,
         options: false,
         websocket: true
+      },
+      lcx: {
+        spot: true,
+        futures: false,
+        margin: false,
+        options: false,
+        websocket: false
       }
     };
 

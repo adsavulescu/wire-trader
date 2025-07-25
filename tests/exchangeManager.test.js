@@ -8,7 +8,10 @@ jest.mock('ccxt', () => {
       ETH: { free: 10.0, used: 2.0, total: 12.0 },
       USDT: { free: 1000.0, used: 500.0, total: 1500.0 }
     }),
-    fetchTime: jest.fn().mockResolvedValue(Date.now())
+    fetchTime: jest.fn().mockResolvedValue(Date.now()),
+    checkRequiredCredentials: jest.fn(),
+    apiKey: 'test-key',
+    secret: 'test-secret'
   };
 
   return {
@@ -16,6 +19,21 @@ jest.mock('ccxt', () => {
     coinbase: jest.fn().mockImplementation(() => mockExchange),
     kraken: jest.fn().mockImplementation(() => mockExchange)
   };
+});
+
+// Mock LCX exchange adapter
+jest.mock('../src/services/exchanges/adapters/lcxAdapter', () => {
+  return jest.fn().mockImplementation(() => ({
+    fetchBalance: jest.fn().mockResolvedValue({
+      BTC: { free: 1.0, used: 0.5, total: 1.5 },
+      ETH: { free: 10.0, used: 2.0, total: 12.0 },
+      USDT: { free: 1000.0, used: 500.0, total: 1500.0 }
+    }),
+    fetchTime: jest.fn().mockResolvedValue(Date.now()),
+    checkRequiredCredentials: jest.fn(),
+    apiKey: 'test-key',
+    secret: 'test-secret'
+  }));
 });
 
 describe('Exchange Manager', () => {
@@ -30,6 +48,7 @@ describe('Exchange Manager', () => {
     exchangeManager.removeExchange(testUserId, 'binance');
     exchangeManager.removeExchange(testUserId, 'coinbase');
     exchangeManager.removeExchange(testUserId, 'kraken');
+    exchangeManager.removeExchange(testUserId, 'lcx');
   });
 
   describe('Supported Exchanges', () => {
@@ -43,6 +62,7 @@ describe('Exchange Manager', () => {
       expect(exchangeNames).toContain('binance');
       expect(exchangeNames).toContain('coinbase');
       expect(exchangeNames).toContain('kraken');
+      expect(exchangeNames).toContain('lcx');
     });
 
     test('should include exchange features and display names', () => {
@@ -183,6 +203,7 @@ describe('Exchange Manager', () => {
       expect(exchangeManager.getExchangeDisplayName('binance')).toBe('Binance');
       expect(exchangeManager.getExchangeDisplayName('coinbase')).toBe('Coinbase Pro');
       expect(exchangeManager.getExchangeDisplayName('kraken')).toBe('Kraken');
+      expect(exchangeManager.getExchangeDisplayName('lcx')).toBe('LCX');
       expect(exchangeManager.getExchangeDisplayName('unknown')).toBe('unknown');
     });
 

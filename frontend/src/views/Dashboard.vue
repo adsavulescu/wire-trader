@@ -119,7 +119,15 @@
       </div>
 
       <!-- Portfolio Breakdown -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Portfolio Chart -->
+        <BaseCard title="Portfolio Allocation">
+          <div class="h-80">
+            <PortfolioChart :balances="exchangeStore.balances" :loading="exchangeStore.loading" />
+          </div>
+        </BaseCard>
+
+        <!-- Portfolio Balances -->
         <BaseCard title="Portfolio Balances">
           <div v-if="exchangeStore.loading" class="text-center py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
@@ -137,9 +145,9 @@
             </BaseButton>
           </div>
           
-          <div v-else class="space-y-4">
+          <div v-else class="space-y-4 max-h-80 overflow-y-auto">
             <div
-              v-for="balance in exchangeStore.balances.filter(b => b.total > 0).slice(0, 8)"
+              v-for="balance in exchangeStore.balances.filter(b => b.total > 0)"
               :key="`${balance.exchange}-${balance.currency}`"
               class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
             >
@@ -160,6 +168,7 @@
           </div>
         </BaseCard>
 
+        <!-- Connected Exchanges -->
         <BaseCard title="Connected Exchanges">
           <div v-if="exchangeStore.connectedExchanges.length === 0" class="text-center py-8">
             <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,7 +181,7 @@
             </BaseButton>
           </div>
           
-          <div v-else class="space-y-4">
+          <div v-else class="space-y-4 max-h-80 overflow-y-auto">
             <div
               v-for="exchange in exchangeStore.connectedExchanges"
               :key="exchange.name"
@@ -196,6 +205,43 @@
           </div>
         </BaseCard>
       </div>
+
+      <!-- Active Orders Summary -->
+      <div v-if="tradingStore.activeOrdersCount > 0" class="mt-8">
+        <BaseCard title="Recent Active Orders">
+          <div class="space-y-3">
+            <div
+              v-for="order in tradingStore.activeOrders.slice(0, 5)"
+              :key="order.id"
+              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+            >
+              <div class="flex items-center space-x-3">
+                <span :class="[
+                  'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                  order.side === 'buy' ? 'bg-success-100 text-success-800' : 'bg-danger-100 text-danger-800'
+                ]">
+                  {{ order.side.toUpperCase() }}
+                </span>
+                <div>
+                  <p class="font-medium text-gray-900">{{ order.symbol }}</p>
+                  <p class="text-sm text-gray-500">{{ order.exchange }} • {{ order.type }}</p>
+                </div>
+              </div>
+              <div class="text-right">
+                <p class="font-medium text-gray-900">{{ formatNumber(order.amount) }}</p>
+                <p class="text-sm text-gray-500">
+                  {{ order.price ? `$${formatCurrency(order.price)}` : 'Market' }}
+                </p>
+              </div>
+            </div>
+            <div v-if="tradingStore.activeOrdersCount > 5" class="text-center pt-2">
+              <BaseButton variant="secondary" size="sm" @click="$router.push('/trading')">
+                View All {{ tradingStore.activeOrdersCount }} Orders
+              </BaseButton>
+            </div>
+          </div>
+        </BaseCard>
+      </div>
     </div>
   </AppLayout>
 </template>
@@ -204,12 +250,15 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useExchangeStore } from '@/stores/exchanges'
+import { useTradingStore } from '@/stores/trading'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import BaseCard from '@/components/common/BaseCard.vue'
 import BaseButton from '@/components/common/BaseButton.vue'
+import PortfolioChart from '@/components/charts/PortfolioChart.vue'
 
 const authStore = useAuthStore()
 const exchangeStore = useExchangeStore()
+const tradingStore = useTradingStore()
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('en-US', {
@@ -229,6 +278,7 @@ const refreshData = async () => {
   await Promise.all([
     exchangeStore.fetchConnectedExchanges(),
     exchangeStore.fetchBalances(),
+    tradingStore.fetchActiveOrders(),
   ])
 }
 
