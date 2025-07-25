@@ -1,6 +1,6 @@
 const express = require('express');
 const Joi = require('joi');
-const { authenticate } = require('../middleware/auth');
+const { authenticateToken: authenticate } = require('../middleware/auth');
 const tradingService = require('../services/trading/tradingService');
 const logger = require('../utils/logger');
 
