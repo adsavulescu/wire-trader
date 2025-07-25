@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Getters
   const isAuthenticated = computed(() => {
-    return !!user.value && !!token.value && authService.isTokenValid()
+    return !!token.value && authService.isTokenValid()
   })
 
   const userFullName = computed(() => {
@@ -23,11 +23,17 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
   const initializeAuth = async () => {
     const storedToken = authService.getToken()
+    
     if (storedToken && authService.isTokenValid()) {
       token.value = storedToken
       await fetchProfile()
     } else {
-      await logout()
+      // Clear local state without calling server logout
+      // since we don't have a valid token anyway
+      user.value = null
+      token.value = null
+      error.value = null
+      authService.removeToken()
     }
   }
 
@@ -38,10 +44,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authService.login(credentials)
       
-      if (response.success && response.data) {
-        user.value = response.data.user
-        token.value = response.data.token
-        authService.setToken(response.data.token)
+      if (response.success && response.data && response.data.data) {
+        user.value = response.data.data.user
+        token.value = response.data.data.token
+        authService.setToken(response.data.data.token)
         return true
       } else {
         error.value = response.error || 'Login failed'
@@ -62,10 +68,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await authService.register(credentials)
       
-      if (response.success && response.data) {
-        user.value = response.data.user
-        token.value = response.data.token
-        authService.setToken(response.data.token)
+      if (response.success && response.data && response.data.data) {
+        user.value = response.data.data.user
+        token.value = response.data.data.token
+        authService.setToken(response.data.data.token)
         return true
       } else {
         error.value = response.error || 'Registration failed'
@@ -86,7 +92,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.getProfile()
       
       if (response.success && response.data) {
-        user.value = response.data
+        user.value = response.data.user
         return true
       } else {
         await logout()

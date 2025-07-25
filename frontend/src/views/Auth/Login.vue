@@ -7,40 +7,53 @@
       </div>
       
       <BaseCard>
-        <form @submit.prevent="handleSubmit" class="space-y-6">
-          <BaseInput
-            id="email"
-            v-model="form.email"
-            type="email"
-            label="Email Address"
-            placeholder="Enter your email"
-            required
-            :error="errors.email"
-          />
+        <div class="space-y-6" @keydown.enter.prevent="handleSubmit">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+              Email Address <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="email"
+              v-model="form.email"
+              type="email"
+              placeholder="Enter your email"
+              autocomplete="off"
+              class="input"
+              :class="{ 'border-red-300 focus:ring-red-500 focus:border-red-500': errors.email }"
+            />
+            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
+          </div>
           
-          <BaseInput
-            id="password"
-            v-model="form.password"
-            type="password"
-            label="Password"
-            placeholder="Enter your password"
-            required
-            :error="errors.password"
-          />
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+              Password <span class="text-red-500">*</span>
+            </label>
+            <input
+              id="password"
+              v-model="form.password"
+              type="password"
+              placeholder="Enter your password"
+              autocomplete="off"
+              class="input"
+              :class="{ 'border-red-300 focus:ring-red-500 focus:border-red-500': errors.password }"
+            />
+            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
+          </div>
           
           <div v-if="authStore.error" class="bg-red-50 border border-red-200 rounded-md p-4">
             <div class="text-sm text-red-600">{{ authStore.error }}</div>
           </div>
           
           <BaseButton
-            type="submit"
+            type="button"
             :loading="authStore.loading"
             loading-text="Signing in..."
             fullWidth
+            @click="handleSubmit"
           >
             Sign In
           </BaseButton>
-        </form>
+        </div>
         
         <div class="mt-6 text-center">
           <p class="text-sm text-gray-600">
@@ -93,14 +106,21 @@ const validateForm = (): boolean => {
 }
 
 const handleSubmit = async () => {
-  if (!validateForm()) return
+  if (!validateForm()) {
+    return
+  }
 
   authStore.clearError()
   
-  const success = await authStore.login(form)
-  
-  if (success) {
-    router.push('/dashboard')
+  try {
+    const success = await authStore.login(form)
+    
+    if (success) {
+      router.push('/dashboard')
+    }
+    // If success is false, the error should show in the template
+  } catch (error) {
+    console.error('Login error:', error)
   }
 }
 </script>

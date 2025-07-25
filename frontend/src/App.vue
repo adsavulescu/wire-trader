@@ -5,15 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-
-const authStore = useAuthStore()
-
-onMounted(() => {
-  // Initialize auth state from localStorage on app start
-  authStore.initializeAuth()
-})
+// Auth initialization is now handled in main.ts before router setup
 </script>
 
 <style scoped>
