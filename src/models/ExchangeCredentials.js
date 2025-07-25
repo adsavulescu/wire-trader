@@ -19,7 +19,7 @@ const exchangeCredentialsSchema = new mongoose.Schema(
     exchangeName: {
       type: String,
       required: [true, 'Exchange name is required'],
-      enum: ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin'],
+      enum: ['binance', 'coinbase', 'kraken', 'kucoin', 'lcx'],
       lowercase: true
     },
 
@@ -311,7 +311,7 @@ exchangeCredentialsSchema.statics.createWithEncryption = async function (data) {
     binance: 'Binance',
     coinbase: 'Coinbase Pro',
     kraken: 'Kraken',
-    ftx: 'FTX',
+    lcx: 'LCX',
     kucoin: 'KuCoin'
   };
 

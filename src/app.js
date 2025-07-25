@@ -334,7 +334,7 @@ class WireTraderApp {
               export: 'GET /api/portfolio/export'
             }
           },
-          supportedExchanges: ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin'],
+          supportedExchanges: ['binance', 'coinbase', 'kraken', 'kucoin', 'lcx'],
           documentation: 'https://github.com/adsavulescu/wire-trader#readme'
         }
       });

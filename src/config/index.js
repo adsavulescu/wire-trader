@@ -68,14 +68,6 @@ const config = {
       rateLimit: 15, // requests per second
       enabled: true
     },
-    ftx: {
-      apiKey: process.env.FTX_API_KEY,
-      secret: process.env.FTX_SECRET_KEY,
-      subAccount: process.env.FTX_SUBACCOUNT,
-      sandbox: process.env.FTX_SANDBOX === 'true',
-      rateLimit: 30, // requests per second
-      enabled: true
-    },
     kucoin: {
       apiKey: process.env.KUCOIN_API_KEY,
       secret: process.env.KUCOIN_SECRET_KEY,

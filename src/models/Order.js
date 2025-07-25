@@ -11,7 +11,7 @@ const orderSchema = new mongoose.Schema(
     exchangeName: {
       type: String,
       required: true,
-      enum: ['binance', 'coinbase', 'kraken', 'ftx', 'kucoin', 'paper_trading'],
+      enum: ['binance', 'coinbase', 'kraken', 'kucoin', 'lcx', 'paper_trading'],
       index: true
     },
     symbol: {

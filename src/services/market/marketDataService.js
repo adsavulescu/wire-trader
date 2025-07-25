@@ -481,7 +481,7 @@ class MarketDataService {
   }
 
   async updateMarketData() {
-    const popularSymbols = ['BTC/USDT', 'ETH/USDT', 'BNB/USDT', 'ADA/USDT', 'SOL/USDT'];
+    const popularSymbols = ['BTC/USDC'];
 
     for (const symbol of popularSymbols) {
       try {
