@@ -235,11 +235,11 @@ describe('Order Model', () => {
       order.addError('Test error message', 'TEST_ERROR', 'exchange');
       await order.save();
 
-      expect(order.errors).toHaveLength(1);
-      expect(order.errors[0].message).toBe('Test error message');
-      expect(order.errors[0].code).toBe('TEST_ERROR');
-      expect(order.errors[0].source).toBe('exchange');
-      expect(order.errors[0].timestamp).toBeTruthy();
+      expect(order.orderErrors).toHaveLength(1);
+      expect(order.orderErrors[0].message).toBe('Test error message');
+      expect(order.orderErrors[0].code).toBe('TEST_ERROR');
+      expect(order.orderErrors[0].source).toBe('exchange');
+      expect(order.orderErrors[0].timestamp).toBeTruthy();
     });
 
     test('should generate unique client order ID', () => {

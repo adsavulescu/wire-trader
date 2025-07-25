@@ -85,9 +85,7 @@ const orderSchema = new mongoose.Schema(
       index: true
     },
     clientOrderId: {
-      type: String,
-      unique: true,
-      sparse: true
+      type: String
     },
     trades: [
       {
@@ -139,7 +137,7 @@ const orderSchema = new mongoose.Schema(
         default: Date.now
       }
     },
-    errors: [
+    orderErrors: [
       {
         timestamp: {
           type: Date,
@@ -236,7 +234,7 @@ orderSchema.methods.mapExchangeStatus = function (exchangeStatus) {
 };
 
 orderSchema.methods.addError = function (message, code = null, source = 'system') {
-  this.errors.push({
+  this.orderErrors.push({
     timestamp: new Date(),
     message,
     code,

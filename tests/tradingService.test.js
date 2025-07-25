@@ -186,8 +186,8 @@ describe('Trading Service', () => {
       const orders = await Order.find({ userId: testUser._id });
       expect(orders).toHaveLength(1);
       expect(orders[0].status).toBe('rejected');
-      expect(orders[0].errors).toHaveLength(1);
-      expect(orders[0].errors[0].message).toBe('Insufficient funds');
+      expect(orders[0].orderErrors).toHaveLength(1);
+      expect(orders[0].orderErrors[0].message).toBe('Insufficient funds');
     });
   });
 

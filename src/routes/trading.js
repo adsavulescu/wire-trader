@@ -284,7 +284,7 @@ router.get('/orders/:orderId', authenticate, async (req, res) => {
           timestamps: order.timestamps,
           metadata: order.metadata,
           trades: order.trades,
-          errors: order.errors
+          errors: order.orderErrors
         }
       }
     });
